@@ -51,6 +51,7 @@
   ],
   "dependencies": {
     "expo": "55.0.10-canary-20260328-bdc6273",
+    "expo-modules-core": "^55.0.25",
     "react": "19.2.0",
     "react-native": "0.83.4"
   }

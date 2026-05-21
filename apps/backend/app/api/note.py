@@ -15,7 +15,7 @@ from ..core.logger import get_logger
 from ..models.note import Note, Tag, NoteTag
 from ..models.knowledge_graph import GraphNode, GraphEdge
 from ..models.user import User
-from .auth import get_current_user
+from app.api.deps import get_current_user
 
 logger = get_logger(__name__)
 

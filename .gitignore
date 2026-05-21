@@ -55,6 +55,7 @@ htmlcov/
 .nox/
 
 # Expo
+.expo/
 apps/frontend/.expo/
 apps/frontend/android/
 apps/frontend/ios/

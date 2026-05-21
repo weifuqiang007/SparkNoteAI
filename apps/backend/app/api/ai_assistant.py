@@ -14,7 +14,7 @@ from typing import List, Dict, Any, Optional
 import json
 
 from app.core.database import get_db
-from app.api.auth import get_current_user
+from app.api.deps import get_current_user
 from app.models.user import User as UserModel
 from app.services.config_service import FeatureSettingService
 from app.services.feature_config.base import FeatureConfigRegistry, AIAssistantFeatureConfig

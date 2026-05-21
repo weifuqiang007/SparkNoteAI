@@ -8,7 +8,7 @@ from typing import List
 
 from app.core.database import get_db
 from app.core.logger import get_logger
-from app.api.auth import get_current_user
+from app.api.deps import get_current_user
 from app.models.user import User as UserModel
 from app.services.config_service import IntegrationService
 from app.services.image_storage import ImageStorageRegistry

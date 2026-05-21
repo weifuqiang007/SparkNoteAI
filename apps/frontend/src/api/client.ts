@@ -58,9 +58,16 @@ client.interceptors.request.use(
   }
 );
 
-// 响应拦截器 - 处理错误
+// 响应拦截器 - 统一解包 R.ok() 格式 + 处理错误
 client.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // 后端统一返回 {"code": 200, "message": "...", "data": ...}
+    // 自动解包，让业务代码直接拿到 data
+    if (response.data && typeof response.data === 'object' && 'code' in response.data && 'data' in response.data) {
+      response.data = response.data.data;
+    }
+    return response;
+  },
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
       // Token 过期或无效，清除本地存储

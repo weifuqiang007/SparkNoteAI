@@ -9,7 +9,7 @@ from typing import List, Optional
 from datetime import datetime
 
 from app.core.database import get_db
-from app.api.auth import get_current_user
+from app.api.deps import get_current_user
 from app.models.user import User as UserModel
 from app.models.task import Task, TaskStatus, TaskType
 from app.schemas.task import (

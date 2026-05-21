@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi import HTTPException
 from app.api import router
 from app.core.config import settings
 from app.core.logger import setup_logging, get_logger
@@ -15,6 +16,7 @@ from app.core.database import engine, Base, SessionLocal
 from app.models import User, UserSession, Task, Note, Tag, NoteTag, ImageCache, GraphNode, GraphEdge, Integration, FeatureSetting, UserPreference
 from app.services.task_scheduler import TaskScheduler
 from app.utils.auth import get_password_hash
+from app.utils.response import R
 
 logger = get_logger(__name__)
 
@@ -91,13 +93,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 全局异常处理器 - 捕获请求验证错误
+# 全局异常处理器 - 统一 R 格式
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=R.fail(message=str(exc.detail), code=exc.status_code),
+    )
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    logger.warning(f"请求验证错误: {exc.errors()}")
+    errors = exc.errors()
+    first_error = errors[0]["msg"] if errors else "请求参数错误"
     return JSONResponse(
         status_code=422,
-        content={"detail": exc.errors()}
+        content=R.fail(message=first_error, code=422, data=errors),
+    )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"未捕获异常: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content=R.fail(message="服务器内部错误", code=500),
     )
 
 # 本地上传目录
