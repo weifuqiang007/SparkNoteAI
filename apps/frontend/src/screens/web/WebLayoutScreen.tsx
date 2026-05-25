@@ -14,6 +14,7 @@ import KnowledgeGraph, { type Node } from './components/KnowledgeGraph';
 import NoteEditor from './components/NoteEditor';
 import SettingsView from './components/SettingsView';
 import SettingsDetailView from './components/SettingsDetailView';
+import AdminScreen from './AdminScreen';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { HammerIcon, BotIcon, SproutIcon, BrainIcon, WorkflowIcon, NetworkIcon, DownloadIcon, LinkIcon, FileIcon, FileTextIcon, MessageSquareIcon, MonitorIcon, PlayCircleIcon, InfoIcon, PlugIcon, SmartphoneIcon, BookIcon, GlobeIcon, LightbulbIcon, LayersIcon, UsersIcon, TagIcon } from '../../components/icons';
 import { spacing, typography } from '../../theme';
@@ -608,7 +609,7 @@ export const ThreeColumnLayout: React.FC = () => {
   if (activeTab === 'ai') {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onTagClick={handleTagClick} user={currentUser} onSettingsClick={handleSettingsClick} onLogoutClick={handleLogoutClick} runningTaskCount={runningTaskCount} tags={tags} onDeleteTag={handleDeleteTag} noteCount={noteCount} importCount={importCount} allCount={allCount} />
+        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onTagClick={handleTagClick} user={currentUser} userRole={authUser?.role} onSettingsClick={handleSettingsClick} onLogoutClick={handleLogoutClick} runningTaskCount={runningTaskCount} tags={tags} onDeleteTag={handleDeleteTag} noteCount={noteCount} importCount={importCount} allCount={allCount} />
         <View style={[styles.aiContainerFull, { backgroundColor: colors.background }]}>
           <AIAssistant onSearch={handleAISearch} />
         </View>
@@ -654,7 +655,7 @@ export const ThreeColumnLayout: React.FC = () => {
 
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onTagClick={handleTagClick} user={currentUser} onSettingsClick={handleSettingsClick} onLogoutClick={handleLogoutClick} runningTaskCount={runningTaskCount} tags={tags} onDeleteTag={handleDeleteTag} noteCount={noteCount} importCount={importCount} allCount={allCount} />
+        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onTagClick={handleTagClick} user={currentUser} userRole={authUser?.role} onSettingsClick={handleSettingsClick} onLogoutClick={handleLogoutClick} runningTaskCount={runningTaskCount} tags={tags} onDeleteTag={handleDeleteTag} noteCount={noteCount} importCount={importCount} allCount={allCount} />
 
         {/* 构建知识图谱确认对话框 - 必须放在 graph view 的 return 内 */}
         <ConfirmDialog
@@ -1051,7 +1052,7 @@ export const ThreeColumnLayout: React.FC = () => {
   if (activeTab === 'plugins') {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onTagClick={handleTagClick} user={currentUser} onSettingsClick={handleSettingsClick} onLogoutClick={handleLogoutClick} runningTaskCount={runningTaskCount} tags={tags} onDeleteTag={handleDeleteTag} noteCount={noteCount} importCount={importCount} allCount={allCount} />
+        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onTagClick={handleTagClick} user={currentUser} userRole={authUser?.role} onSettingsClick={handleSettingsClick} onLogoutClick={handleLogoutClick} runningTaskCount={runningTaskCount} tags={tags} onDeleteTag={handleDeleteTag} noteCount={noteCount} importCount={importCount} allCount={allCount} />
         <View style={[styles.pluginsContainer, { backgroundColor: colors.backgroundSecondary, borderRightColor: colors.border }]}>
           <Text style={[styles.pluginsTitle, { color: colors.text }]}>
           <PlugIcon size={24} strokeWidth={2} color={colors.text} />
@@ -1186,7 +1187,7 @@ export const ThreeColumnLayout: React.FC = () => {
 
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onTagClick={handleTagClick} user={currentUser} onSettingsClick={handleSettingsClick} onLogoutClick={handleLogoutClick} runningTaskCount={runningTaskCount} tags={tags} onDeleteTag={handleDeleteTag} noteCount={noteCount} importCount={importCount} allCount={allCount} />
+        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onTagClick={handleTagClick} user={currentUser} userRole={authUser?.role} onSettingsClick={handleSettingsClick} onLogoutClick={handleLogoutClick} runningTaskCount={runningTaskCount} tags={tags} onDeleteTag={handleDeleteTag} noteCount={noteCount} importCount={importCount} allCount={allCount} />
         <View style={[styles.tasksContainerFull, { backgroundColor: colors.backgroundSecondary }]}>
           <View style={[styles.tasksHeader, { borderBottomColor: colors.border }]}>
             <Text style={[styles.tasksTitle, { color: colors.text }]}>📋 后台任务</Text>
@@ -1233,10 +1234,29 @@ export const ThreeColumnLayout: React.FC = () => {
   }
 
   // 设置视图 - 三栏布局
+  if (activeTab === 'admin') {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onTagClick={handleTagClick} user={currentUser} userRole={authUser?.role} onSettingsClick={handleSettingsClick} onLogoutClick={handleLogoutClick} runningTaskCount={runningTaskCount} tags={tags} onDeleteTag={handleDeleteTag} noteCount={noteCount} importCount={importCount} allCount={allCount} />
+        <AdminScreen />
+        <ConfirmDialog
+          visible={showLogoutConfirm}
+          title="确认退出"
+          message="确定要退出登录吗？"
+          confirmText="退出"
+          cancelText="取消"
+          isDestructive
+          onConfirm={executeLogout}
+          onCancel={() => setShowLogoutConfirm(false)}
+        />
+      </View>
+    );
+  }
+
   if (activeTab === 'settings') {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onTagClick={handleTagClick} user={currentUser} onSettingsClick={handleSettingsClick} onLogoutClick={handleLogoutClick} runningTaskCount={runningTaskCount} tags={tags} onDeleteTag={handleDeleteTag} noteCount={noteCount} importCount={importCount} allCount={allCount} />
+        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onTagClick={handleTagClick} user={currentUser} userRole={authUser?.role} onSettingsClick={handleSettingsClick} onLogoutClick={handleLogoutClick} runningTaskCount={runningTaskCount} tags={tags} onDeleteTag={handleDeleteTag} noteCount={noteCount} importCount={importCount} allCount={allCount} />
         <SettingsView
           selectedCategory={selectedSettingsCategory}
           onCategorySelect={setSelectedSettingsCategory}

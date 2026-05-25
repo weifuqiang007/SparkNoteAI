@@ -11,7 +11,7 @@ interface AuthState {
   isLoading: boolean;
   isServerUnreachable: boolean;
   error: string | null;
-  errorType: 'network' | 'credential' | null;
+  errorType: 'network' | 'credential' | 'approval' | null;
   // 2FA 相关状态
   twoFactorRequired: boolean;
   twoFactorSecret: string | null;
@@ -20,7 +20,7 @@ interface AuthState {
   // 操作
   login: (username: string, password: string) => Promise<void>;
   loginWith2FA: (code: string) => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<void>;
+  register: (username: string, email: string, password: string, role: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   retryConnection: () => Promise<void>;
@@ -69,8 +69,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           errorType: 'network',
           isLoading: false,
         });
+      } else if (error.response?.status === 403) {
+        // 审核状态错误（待审核 / 已拒绝 / 已禁用）
+        const message = error.response?.data?.message || '账号无权限登录';
+        set({ error: message, errorType: 'approval', isLoading: false });
       } else {
-        // 处理 422 验证错误
         const errors = error.response?.data?.detail;
         let message = '登录失败，请检查用户名和密码';
 
@@ -125,18 +128,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  register: async (username: string, email: string, password: string) => {
+  register: async (username: string, email: string, password: string, role: string) => {
     set({ isLoading: true, error: null });
     try {
-      await authApi.register({ username, email, password });
-      // 注册成功后自动登录
-      await authApi.login({ username, password });
-      const user = await authApi.getCurrentUser();
-      set({ user, isAuthenticated: true, isLoading: false });
+      await authApi.register({ username, email, password, role });
+      // 注册成功，等待 admin 审核，不自动登录
+      set({ isLoading: false });
     } catch (error: any) {
       console.error('注册错误:', error);
       console.error('错误响应:', error.response?.data);
-      const message = error.response?.data?.detail || '注册失败，请重试';
+      const message = error.response?.data?.message || error.response?.data?.detail || '注册失败，请重试';
       set({ error: message, isLoading: false });
       throw error;
     }

@@ -20,6 +20,36 @@ from app.utils.response import R
 
 logger = get_logger(__name__)
 
+
+def _migrate_users_table(inspector, engine):
+    """为已存在的 users 表自动添加新字段（开发阶段迁移方案）"""
+    from sqlalchemy import text
+
+    if not inspector.has_table("users"):
+        return
+
+    existing_columns = {c['name'] for c in inspector.get_columns('users')}
+    new_columns = {
+        'role': "ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'student' NOT NULL",
+        'approval_status': "ALTER TABLE users ADD COLUMN approval_status VARCHAR(20) DEFAULT 'pending' NOT NULL",
+        'approval_note': "ALTER TABLE users ADD COLUMN approval_note VARCHAR(500)",
+        'approved_by': "ALTER TABLE users ADD COLUMN approved_by INTEGER REFERENCES users(id)",
+        'approved_at': "ALTER TABLE users ADD COLUMN approved_at TIMESTAMP WITH TIME ZONE",
+    }
+
+    added = []
+    with engine.connect() as conn:
+        for col_name, sql in new_columns.items():
+            if col_name not in existing_columns:
+                conn.execute(text(sql))
+                added.append(col_name)
+        conn.commit()
+
+    if added:
+        logger.info(f"数据库迁移完成，新增字段: {', '.join(added)}")
+    else:
+        logger.info("数据库字段已是最新，无需迁移")
+
 # 初始化日志（在应用启动最早期）
 setup_logging(level="DEBUG" if settings.DEBUG else "INFO")
 
@@ -36,8 +66,7 @@ async def startup_event():
     logger.info("应用启动中...")
 
     # 自动创建数据库表（首次启动）
-    # 多进程环境下需先检查表是否已存在，避免并发创建冲突
-    from sqlalchemy import inspect
+    from sqlalchemy import inspect, text
     inspector = inspect(engine)
     try:
         if not inspector.has_table("users"):
@@ -47,7 +76,12 @@ async def startup_event():
             logger.info("数据库表已存在，跳过创建")
     except Exception as e:
         logger.warning(f"数据库表创建时发生竞态冲突（可忽略）: {e}")
-        logger.info("数据库表已由另一进程创建")
+
+    # 自动迁移：为已存在的 users 表添加新字段
+    try:
+        _migrate_users_table(inspector, engine)
+    except Exception as e:
+        logger.warning(f"数据库迁移时出错（可能字段已存在）: {e}")
 
     # 创建默认管理员用户
     db = SessionLocal()
@@ -59,12 +93,21 @@ async def startup_event():
                 email=settings.ADMIN_EMAIL,
                 password_hash=get_password_hash(settings.ADMIN_PASSWORD),
                 is_active=True,
+                role="admin",
+                approval_status="approved",
             )
             db.add(admin_user)
             db.commit()
             logger.info(f"管理员用户创建成功: {settings.ADMIN_USERNAME}")
         else:
-            logger.info("管理员用户已存在，跳过创建")
+            # 确保已有 admin 账号的角色和审核状态正确
+            if getattr(admin, 'role', None) != 'admin':
+                admin.role = "admin"
+                admin.approval_status = "approved"
+                db.commit()
+                logger.info("已更新管理员角色信息")
+            else:
+                logger.info("管理员用户已存在，跳过创建")
     except Exception as e:
         db.rollback()
         logger.error(f"创建管理员用户失败: {e}")

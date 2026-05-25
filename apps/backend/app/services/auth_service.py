@@ -1,12 +1,11 @@
 from datetime import timedelta
-from uuid import uuid4
 
 from fastapi import HTTPException, status, Request
 from sqlalchemy.orm import Session
 
 from app.dao.user_dao import UserDAO
 from app.dao.session_dao import SessionDAO
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserRole, ApprovalStatus
 from app.utils.token.jwt_helper import create_access_token, decode_token
 from app.utils.password.crypto import verify_password, get_password_hash
 from app.utils.totp.totp_helper import verify_totp_code
@@ -27,11 +26,21 @@ class AuthService:
         if UserDAO.get_by_email(db, user_data.email):
             raise HTTPException(status_code=400, detail="邮箱已被注册")
 
-        hashed = get_password_hash(user_data.password)
-        user = UserDAO.create(db, username=user_data.username,
-                              email=user_data.email, password_hash=hashed)
+        if user_data.role == UserRole.admin:
+            raise HTTPException(status_code=403, detail="不允许注册管理员账号")
 
-        logger.info(f"用户注册成功: username={user.username}, user_id={user.id}")
+        hashed = get_password_hash(user_data.password)
+        user = UserDAO.create(
+            db,
+            username=user_data.username,
+            email=user_data.email,
+            password_hash=hashed,
+            role=user_data.role.value,
+            approval_status=ApprovalStatus.pending.value,
+            is_active=True,
+        )
+
+        logger.info(f"用户注册成功（待审核）: username={user.username}, role={user.role}")
         return user
 
     @staticmethod
@@ -45,6 +54,15 @@ class AuthService:
                 detail="用户名或密码错误",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+
+        if not user.is_active:
+            raise HTTPException(status_code=403, detail="账号已被禁用，请联系管理员")
+
+        if user.approval_status != ApprovalStatus.approved.value:
+            if user.approval_status == ApprovalStatus.pending.value:
+                raise HTTPException(status_code=403, detail="账号待审核，请等待管理员审批")
+            elif user.approval_status == ApprovalStatus.rejected.value:
+                raise HTTPException(status_code=403, detail="账号审核未通过，请联系管理员")
 
         if user.two_factor_enabled:
             temp_token = create_access_token(
@@ -61,7 +79,7 @@ class AuthService:
         access_token = create_access_token(data={"sub": user.username})
         AuthService._create_session(db, user.id, request)
 
-        logger.info(f"用户登录成功: user_id={user.id}, username={user.username}")
+        logger.info(f"用户登录成功: user_id={user.id}, username={user.username}, role={user.role}")
         return {"access_token": access_token, "token_type": "bearer"}
 
     @staticmethod
@@ -102,14 +120,17 @@ class AuthService:
 
     @staticmethod
     def _create_session(db: Session, user_id: int, request: Request):
-        session_token = str(uuid4())
+        import uuid
+        from datetime import datetime
+
+        session_token = str(uuid.uuid4())
         user_agent = request.headers.get("User-Agent", "")
         ip_address = get_client_ip(request)
 
         ua_info = parse_user_agent(user_agent)
         device_name = generate_device_name(ua_info["browser"], ua_info["os"], ua_info["device_type"])
         location = get_location_from_ip(ip_address)
-        expires_at = __import__("datetime").datetime.utcnow() + timedelta(days=7)
+        expires_at = datetime.utcnow() + timedelta(days=7)
 
         SessionDAO.deactivate_others(db, user_id)
         SessionDAO.create(

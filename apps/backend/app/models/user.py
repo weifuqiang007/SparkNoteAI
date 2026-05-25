@@ -17,6 +17,14 @@ class User(Base):
     # 双因素认证 (2FA) 相关字段
     two_factor_enabled = Column(Boolean, default=False)
     two_factor_secret = Column(String(100), nullable=True)  # TOTP 密钥
+
+    # 角色与审核字段
+    role = Column(String(20), default="student", nullable=False)              # student / teacher / admin
+    approval_status = Column(String(20), default="pending", nullable=False)   # pending / approved / rejected
+    approval_note = Column(String(500), nullable=True)                        # 审核备注
+    approved_by = Column(Integer, ForeignKey("users.id"), nullable=True)      # 审核人
+    approved_at = Column(DateTime(timezone=True), nullable=True)              # 审核时间
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

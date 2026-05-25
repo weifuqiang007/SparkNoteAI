@@ -40,6 +40,8 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState('student');
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const { register, isLoading, error, clearError } = useAuthStore();
   const { loadConfig } = useServerConfigStore();
@@ -76,7 +78,8 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     }
 
     try {
-      await register(username, email, password);
+      await register(username, email, password, role);
+      setRegistrationSuccess(true);
     } catch (err) {
       // 错误已在 store 中处理，会在界面显示
     }
@@ -105,6 +108,64 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     if (error) clearError();
     if (validationError) setValidationError(null);
   };
+
+  // 角色选择组件
+  const RoleSelector = () => (
+    <View style={styles.roleContainer}>
+      <Text style={[styles.roleLabel, { color: colors.text }]}>我是</Text>
+      <View style={styles.roleOptions}>
+        <TouchableOpacity
+          style={[
+            styles.roleOption,
+            role === 'student' && styles.roleOptionActive,
+            { borderColor: role === 'student' ? colors.primary : colors.border },
+            { backgroundColor: role === 'student' ? colors.primary + '10' : colors.background },
+          ]}
+          onPress={() => setRole('student')}
+        >
+          <Text style={[styles.roleOptionText, { color: role === 'student' ? colors.primary : colors.textSecondary }]}>
+            学生
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.roleOption,
+            role === 'teacher' && styles.roleOptionActive,
+            { borderColor: role === 'teacher' ? colors.primary : colors.border },
+            { backgroundColor: role === 'teacher' ? colors.primary + '10' : colors.background },
+          ]}
+          onPress={() => setRole('teacher')}
+        >
+          <Text style={[styles.roleOptionText, { color: role === 'teacher' ? colors.primary : colors.textSecondary }]}>
+            教师
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  // 注册成功提示
+  if (registrationSuccess) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.successContainer}>
+          <View style={[styles.successIcon, { backgroundColor: colors.success + '15' }]}>
+            <Text style={styles.successIconText}>✓</Text>
+          </View>
+          <Text style={[styles.successTitle, { color: colors.text }]}>注册成功</Text>
+          <Text style={[styles.successMessage, { color: colors.textSecondary }]}>
+            您的账号正在等待管理员审核，审核通过后即可登录使用。
+          </Text>
+          <TouchableOpacity
+            style={[styles.registerButton, { backgroundColor: colors.primary, marginTop: spacing.xl }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={[styles.registerButtonText, { color: colors.cta }]}>返回登录</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // 移动端布局
   if (isMobile) {
@@ -178,6 +239,8 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                 secureTextEntry
                 autoCapitalize="none"
               />
+
+              <RoleSelector />
 
               {(validationError || error) && (
                 <View style={[styles.errorContainer, { backgroundColor: colors.error + '10' }]}>
@@ -292,6 +355,8 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                     secureTextEntry
                     autoCapitalize="none"
                   />
+
+                  <RoleSelector />
 
                   {(validationError || error) && (
                     <View style={styles.errorContainer}>
@@ -440,6 +505,48 @@ const styles = StyleSheet.create({
     marginBottom: spacing['3xl'],
   },
   formArea: { gap: spacing.md },
+
+  // 角色选择
+  roleContainer: { marginTop: spacing.xs },
+  roleLabel: { fontSize: 14, fontWeight: '500', marginBottom: spacing.sm },
+  roleOptions: { flexDirection: 'row', gap: spacing.md },
+  roleOption: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  roleOptionActive: {},
+  roleOptionText: { fontSize: 15, fontWeight: '600' },
+
+  // 注册成功
+  successContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+    maxWidth: 420,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  successIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xl,
+  },
+  successIconText: { fontSize: 36, fontWeight: '700', color: '#22c55e' },
+  successTitle: { fontSize: 24, fontWeight: '700', marginBottom: spacing.md },
+  successMessage: {
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: spacing.lg,
+  },
 });
 
 export default RegisterScreen;

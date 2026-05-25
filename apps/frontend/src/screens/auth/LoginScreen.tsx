@@ -285,19 +285,21 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                   <View style={[
                     styles.errorContainer,
                     {
-                      backgroundColor: errorType === 'network' ? (colors.warning + '10') : (colors.error + '10'),
-                      borderLeftColor: errorType === 'network' ? colors.warning : colors.error,
+                      backgroundColor: errorType === 'network' ? (colors.warning + '10') : (errorType === 'approval' ? (colors.blue + '10') : (colors.error + '10')),
+                      borderLeftColor: errorType === 'network' ? colors.warning : (errorType === 'approval' ? colors.blue : colors.error),
                     },
                   ]}>
                     <View style={styles.errorContent}>
                       {errorType === 'network' ? (
                         <WifiOffIcon size={18} color={colors.warning} />
+                      ) : errorType === 'approval' ? (
+                        <CheckCircleIcon size={18} color={colors.blue} />
                       ) : (
                         <AlertTriangleIcon size={18} color={colors.error} />
                       )}
                       <Text style={[
                         styles.errorText,
-                        { color: errorType === 'network' ? colors.warning : colors.error },
+                        { color: errorType === 'network' ? colors.warning : (errorType === 'approval' ? colors.blue : colors.error) },
                       ]}>
                         {error}
                       </Text>

@@ -46,3 +46,17 @@ class UserDAO:
     def delete(db: Session, user: User) -> None:
         db.delete(user)
         db.commit()
+
+    @staticmethod
+    def get_pending_users(db: Session) -> list[User]:
+        stmt = select(User).where(User.approval_status == "pending").order_by(User.created_at.desc())
+        return list(db.execute(stmt).scalars().all())
+
+    @staticmethod
+    def get_all_users(db: Session, role: str | None = None, approval_status: str | None = None) -> list[User]:
+        stmt = select(User).order_by(User.created_at.desc())
+        if role:
+            stmt = stmt.where(User.role == role)
+        if approval_status:
+            stmt = stmt.where(User.approval_status == approval_status)
+        return list(db.execute(stmt).scalars().all())

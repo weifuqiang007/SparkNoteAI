@@ -20,10 +20,16 @@ from .system import router as system_router
 # 图片上传路由
 from .images import router as images_router
 
+# 管理员路由
+from .admin import router as admin_router
+
 router = APIRouter()
 
 # 认证相关
 router.include_router(auth_router, prefix="/auth", tags=["认证"])
+
+# 管理员
+router.include_router(admin_router, prefix="/admin", tags=["管理员"])
 
 # 用户管理（需要去掉 /auth 前缀，改为 /user）
 router.include_router(user_router, prefix="/user", tags=["用户管理"])

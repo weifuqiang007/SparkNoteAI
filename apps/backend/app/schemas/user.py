@@ -1,6 +1,19 @@
+from enum import Enum
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+from typing import Optional, Literal
 from datetime import datetime
+
+
+class UserRole(str, Enum):
+    student = "student"
+    teacher = "teacher"
+    admin = "admin"
+
+
+class ApprovalStatus(str, Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
 
 
 class UserBase(BaseModel):
@@ -10,6 +23,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=6, description="密码至少需要 6 个字符")
+    role: UserRole = Field(UserRole.student, description="角色：student 或 teacher")
 
 
 class UserUpdate(BaseModel):
@@ -25,6 +39,9 @@ class UserPasswordUpdate(BaseModel):
 class User(UserBase):
     id: int
     is_active: bool
+    role: UserRole
+    approval_status: ApprovalStatus
+    approval_note: Optional[str] = None
     two_factor_enabled: bool = False
     created_at: datetime
     updated_at: Optional[datetime] = None
@@ -65,3 +82,24 @@ class TwoFactorLoginRequest(BaseModel):
 
 class TokenData(BaseModel):
     username: Optional[str] = None
+
+
+# 审核相关 Schema
+class UserApproval(BaseModel):
+    user_id: int
+    action: Literal["approve", "reject"] = Field(..., description="审核操作")
+    note: Optional[str] = Field(None, max_length=500, description="审核备注")
+
+
+class UserStatusUpdate(BaseModel):
+    is_active: bool = Field(..., description="是否启用")
+
+
+class PendingUser(UserBase):
+    id: int
+    role: UserRole
+    approval_status: ApprovalStatus
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

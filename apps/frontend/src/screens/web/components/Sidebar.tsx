@@ -31,6 +31,7 @@ import {
   MoonIcon,
   GlobeIcon,
   FileTextIcon,
+  ShieldIcon,
 } from '../../../components/icons';
 import { Tag } from '../../../api/note';
 
@@ -49,6 +50,7 @@ interface SidebarProps {
     name: string;
     email: string;
   };
+  userRole?: string;
   onSettingsClick?: () => void;
   onLogoutClick?: () => void;
   runningTaskCount?: number;
@@ -59,7 +61,7 @@ interface SidebarProps {
   allCount?: number;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, onTagClick, user, onSettingsClick, onLogoutClick, runningTaskCount = 0, tags = [], onDeleteTag, noteCount = 0, importCount = 0, allCount = 0 }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, onTagClick, user, userRole, onSettingsClick, onLogoutClick, runningTaskCount = 0, tags = [], onDeleteTag, noteCount = 0, importCount = 0, allCount = 0 }) => {
   const [isManagingTags, setIsManagingTags] = useState(false);
   const colors = useWebTheme();
   const theme = useInterfaceSettingsStore((s) => s.theme);
@@ -89,8 +91,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, onTagC
     { id: 'note', label: '笔记', icon: <FileIcon size={18} strokeWidth={2} />, count: noteCount },
     { id: 'import', label: '导入', icon: <DownloadIcon size={18} strokeWidth={2} />, count: importCount },
     { id: 'all', label: '全部知识', icon: <BookIcon size={18} strokeWidth={2} />, count: allCount },
-    // { id: 'plugins', label: '插件', icon: <PlugIcon size={18} strokeWidth={2} /> },
     { id: 'tasks', label: '后台任务', icon: <TaskIcon size={18} strokeWidth={2} />, count: runningTaskCount },
+    ...(userRole === 'admin' ? [
+      { id: 'admin', label: '注册审批', icon: <ShieldIcon size={18} strokeWidth={2} /> },
+    ] : []),
   ];
 
   return (

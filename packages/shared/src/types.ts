@@ -6,6 +6,9 @@ export interface User {
   username: string;
   email: string;
   is_active: boolean;
+  role: 'student' | 'teacher' | 'admin';
+  approval_status: 'pending' | 'approved' | 'rejected';
+  approval_note?: string;
   two_factor_enabled?: boolean;
   created_at: string;
   updated_at?: string;
@@ -105,4 +108,5 @@ export interface RegisterRequest {
   username: string;
   email: string;
   password: string;
+  role: string;
 }
